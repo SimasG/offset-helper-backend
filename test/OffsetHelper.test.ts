@@ -254,7 +254,8 @@ describe("OffsetHelper", function () {
 
   describe("#autoOffsetExactOut{ETH,Token}()", function () {
     for (const name of TOKEN_POOLS) {
-      it(`should retire 1.0 TCO2 using a MATIC swap and ${name.toUpperCase()} redemption`, async function () {
+      // ** NCT bug test case
+      it.only(`should retire 1.0 TCO2 using a MATIC swap and ${name.toUpperCase()} redemption`, async function () {
         const { offsetHelper, addr2, tokens } = await loadFixture(
           deployOffsetHelperFixture
         );
@@ -276,6 +277,7 @@ describe("OffsetHelper", function () {
           await offsetHelper.autoOffsetExactOutETH(
             poolToken.name === "BCT" ? addresses.bct : addresses.nct,
             ONE_ETHER,
+            true,
             {
               value: maticCost,
             }
@@ -902,6 +904,7 @@ describe("OffsetHelper", function () {
           await offsetHelper.swapExactOutETH(
             poolToken.name === "BCT" ? addresses.bct : addresses.nct,
             ONE_ETHER,
+            true,
             {
               value: maticToSend,
             }
@@ -931,6 +934,7 @@ describe("OffsetHelper", function () {
           await offsetHelper.swapExactOutETH(
             poolToken.name === "BCT" ? addresses.bct : addresses.nct,
             ONE_ETHER,
+            true,
             {
               value: maticToSend.add(parseEther("0.5")),
             }
