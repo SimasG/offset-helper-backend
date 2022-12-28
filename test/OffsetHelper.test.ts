@@ -278,6 +278,9 @@ describe("OffsetHelper", function () {
             poolToken.name === "BCT" ? addresses.bct : addresses.nct,
             ONE_ETHER,
             true,
+            true,
+            // `_intermediaryToken` address
+            "0x4e78011Ce80ee02d2c3e649Fb657E45898257815",
             {
               value: maticCost,
             }
@@ -905,6 +908,8 @@ describe("OffsetHelper", function () {
             poolToken.name === "BCT" ? addresses.bct : addresses.nct,
             ONE_ETHER,
             true,
+            false,
+            "0x0000000000000000000000000000000000000000",
             {
               value: maticToSend,
             }
@@ -935,6 +940,8 @@ describe("OffsetHelper", function () {
             poolToken.name === "BCT" ? addresses.bct : addresses.nct,
             ONE_ETHER,
             true,
+            false,
+            "0x0000000000000000000000000000000000000000",
             {
               value: maticToSend.add(parseEther("0.5")),
             }

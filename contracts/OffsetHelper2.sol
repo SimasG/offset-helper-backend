@@ -183,7 +183,9 @@ contract OffsetHelper is OffsetHelperStorage {
     function autoOffsetExactOutETH(
         address _poolToken,
         uint256 _amountToOffset,
-        bool customPath
+        bool customPath,
+        bool multiStepPath,
+        address _intermediaryToken
     )
         public
         payable
@@ -197,7 +199,9 @@ contract OffsetHelper is OffsetHelperStorage {
         (path, amounts) = swapExactOutETH(
             _poolToken,
             _amountToOffset,
-            customPath
+            customPath,
+            multiStepPath,
+            _intermediaryToken
         );
 
         (
@@ -451,7 +455,9 @@ contract OffsetHelper is OffsetHelperStorage {
     function swapExactOutETH(
         address _toToken,
         uint256 _toAmount,
-        bool customPath
+        bool customPath,
+        bool multiStepPath,
+        address _intermediaryToken
     )
         public
         payable
@@ -462,13 +468,22 @@ contract OffsetHelper is OffsetHelperStorage {
         // ** Why are we using WMATIC token when we're supposed to be using MATIC?
         address fromToken = eligibleTokenAddresses["WMATIC"];
 
-        // ** Add 4th arg (direct OR multi-step)?
         if (customPath) {
+            if (multiStepPath) {
+                // custom multi step path
+                path = generatePath(
+                    fromToken,
+                    _intermediaryToken,
+                    _toToken,
+                    customPath
+                );
+            } else {
+                // custom direct path
+                path = generatePath(fromToken, _toToken, customPath);
+            }
+        } else {
             // business as usual
             path = generatePath(fromToken, _toToken);
-        } else {
-            // custom path
-            path = generatePath(fromToken, _toToken, customPath);
         }
 
         // swap
@@ -630,7 +645,7 @@ contract OffsetHelper is OffsetHelperStorage {
         address _fromToken,
         address _toToken
     ) internal view returns (address[] memory) {
-        console.log("old generatePath ran");
+        console.log("default generatePath ran");
         if (_fromToken == eligibleTokenAddresses["USDC"]) {
             address[] memory path = new address[](2);
             path[0] = _fromToken;
@@ -645,17 +660,40 @@ contract OffsetHelper is OffsetHelperStorage {
         }
     }
 
-    // custom `generatePath`
+    // custom direct `generatePath`
     function generatePath(
         address _fromToken,
         address _toToken,
         bool customPath
     ) internal view returns (address[] memory) {
-        console.log("new generatePath ran");
+        console.log("custom direct generatePath ran");
         // if (_fromToken == eligibleTokenAddresses["USDC"]) {
         address[] memory path = new address[](2);
         path[0] = _fromToken;
         path[1] = _toToken;
+        return path;
+        // } else {
+        //     address[] memory path = new address[](3);
+        //     path[0] = _fromToken;
+        //     path[1] = eligibleTokenAddresses["USDC"];
+        //     path[2] = _toToken;
+        //     return path;
+        // }
+    }
+
+    // custom direct `generatePath`
+    function generatePath(
+        address _fromToken,
+        address _intermediaryToken,
+        address _toToken,
+        bool customPath
+    ) internal view returns (address[] memory) {
+        console.log("custom multi-step generatePath ran");
+        // if (_fromToken == eligibleTokenAddresses["USDC"]) {
+        address[] memory path = new address[](3);
+        path[0] = _fromToken;
+        path[1] = _intermediaryToken;
+        path[2] = _toToken;
         return path;
         // } else {
         //     address[] memory path = new address[](3);
