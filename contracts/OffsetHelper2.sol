@@ -666,13 +666,16 @@ contract OffsetHelper is OffsetHelperStorage {
         // ** Why are we using WMATIC token when we're supposed to be using MATIC?
         address fromToken = eligibleTokenAddresses["WMATIC"];
 
-        // custom multi step path
-        path = generatePath(
-            fromToken,
-            _toToken,
-            multiStepPath,
-            _intermediaryToken
-        );
+        if (multiStepPath) {
+            path = generatePath(
+                fromToken,
+                _toToken,
+                multiStepPath,
+                _intermediaryToken
+            );
+        } else {
+            path = generatePath(fromToken, _toToken);
+        }
 
         // swap
         // ** `swapETHForExactTokens()` requires first address in the path to be WETH but we use MATIC here
@@ -718,7 +721,11 @@ contract OffsetHelper is OffsetHelperStorage {
         // ** Why are we using WMATIC token when we're supposed to be using MATIC?
         address fromToken = eligibleTokenAddresses["WMATIC"];
 
-        path = generatePath(fromToken, _toToken, directPath);
+        if (directPath) {
+            path = generatePath(fromToken, _toToken, directPath);
+        } else {
+            path = generatePath(fromToken, _toToken);
+        }
 
         // swap
         // ** `swapETHForExactTokens()` requires first address in the path to be WETH but we use MATIC here
@@ -802,12 +809,20 @@ contract OffsetHelper is OffsetHelperStorage {
     ) public payable onlyRedeemable(_toToken) returns (uint256) {
         // calculate path & amounts
         address fromToken = eligibleTokenAddresses["WMATIC"];
-        address[] memory path = generatePath(
-            fromToken,
-            _toToken,
-            multiStepPath,
-            _intermediaryToken
-        );
+
+        // ** Is this pre-declaration correct?
+        address[] memory path;
+
+        if (multiStepPath) {
+            path = generatePath(
+                fromToken,
+                _toToken,
+                multiStepPath,
+                _intermediaryToken
+            );
+        } else {
+            path = generatePath(fromToken, _toToken);
+        }
 
         // swap
         // ** Does MATIC get auto-wrapped into WMATIC here?
@@ -834,7 +849,15 @@ contract OffsetHelper is OffsetHelperStorage {
     ) public payable onlyRedeemable(_toToken) returns (uint256) {
         // calculate path & amounts
         address fromToken = eligibleTokenAddresses["WMATIC"];
-        address[] memory path = generatePath(fromToken, _toToken, directPath);
+
+        // ** Is this pre-declaration correct?
+        address[] memory path;
+
+        if (directPath) {
+            path = generatePath(fromToken, _toToken, directPath);
+        } else {
+            path = generatePath(fromToken, _toToken);
+        }
 
         // swap
         // ** Does MATIC get auto-wrapped into WMATIC here?
@@ -897,16 +920,27 @@ contract OffsetHelper is OffsetHelperStorage {
     ) public onlySwappable(_fromToken) onlyRedeemable(_toToken) {
         // calculate path & amounts
         // ** Could we replace `memory` with `calldata`?
-        (
-            address[] memory path,
-            uint256[] memory expAmounts
-        ) = calculateExactOutSwap(
+
+        // ** Is this pre-declaration correct?
+        address[] memory path;
+        uint256[] memory expAmounts;
+
+        if (multiStepPath) {
+            (path, expAmounts) = calculateExactOutSwap(
                 _fromToken,
                 _toToken,
                 _toAmount,
                 multiStepPath,
                 _intermediaryToken
             );
+        } else {
+            (path, expAmounts) = calculateExactOutSwap(
+                _fromToken,
+                _toToken,
+                _toAmount
+            );
+        }
+
         uint256 amountIn = expAmounts[0];
 
         // transfer tokens
@@ -950,10 +984,26 @@ contract OffsetHelper is OffsetHelperStorage {
     ) public onlySwappable(_fromToken) onlyRedeemable(_toToken) {
         // calculate path & amounts
         // ** Could we replace `memory` with `calldata`?
-        (
-            address[] memory path,
-            uint256[] memory expAmounts
-        ) = calculateExactOutSwap(_fromToken, _toToken, _toAmount, directPath);
+
+        // ** Is this pre-declaration correct?
+        address[] memory path;
+        uint256[] memory expAmounts;
+
+        if (directPath) {
+            (path, expAmounts) = calculateExactOutSwap(
+                _fromToken,
+                _toToken,
+                _toAmount,
+                directPath
+            );
+        } else {
+            (path, expAmounts) = calculateExactOutSwap(
+                _fromToken,
+                _toToken,
+                _toAmount
+            );
+        }
+
         uint256 amountIn = expAmounts[0];
 
         // transfer tokens
@@ -1051,12 +1101,21 @@ contract OffsetHelper is OffsetHelperStorage {
         returns (uint256)
     {
         // calculate path & amounts
-        address[] memory path = generatePath(
-            _fromToken,
-            _toToken,
-            multiStepPath,
-            _intermediaryToken
-        );
+
+        // ** Is this pre-declaration correct?
+        address[] memory path;
+
+        if (multiStepPath) {
+            path = generatePath(
+                _fromToken,
+                _toToken,
+                multiStepPath,
+                _intermediaryToken
+            );
+        } else {
+            path = generatePath(_fromToken, _toToken);
+        }
+
         uint256 len = path.length;
 
         // transfer tokens
@@ -1102,7 +1161,16 @@ contract OffsetHelper is OffsetHelperStorage {
         returns (uint256)
     {
         // calculate path & amounts
-        address[] memory path = generatePath(_fromToken, _toToken, directPath);
+
+        // ** Is this pre-declaration correct?
+        address[] memory path;
+
+        if (directPath) {
+            path = generatePath(_fromToken, _toToken, directPath);
+        } else {
+            path = generatePath(_fromToken, _toToken);
+        }
+
         uint256 len = path.length;
 
         // transfer tokens
