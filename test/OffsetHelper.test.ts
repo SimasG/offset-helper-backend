@@ -273,14 +273,28 @@ describe("OffsetHelper", function () {
         );
 
         // then we use the autoOffset function to retire 1.0 TCO2 from MATIC using NCT
+        // const tx = await (
+        //   await offsetHelper.autoOffsetExactOutETH(
+        //     poolToken.name === "BCT" ? addresses.bct : addresses.nct,
+        //     ONE_ETHER,
+        //     true,
+        //     true,
+        //     "0x0000000000000000000000000000000000000000",
+        //     {
+        //       value: maticCost,
+        //     }
+        //   )
+        // ).wait();
+
         const tx = await (
-          await offsetHelper.autoOffsetExactOutETH(
+          await offsetHelper[
+            "autoOffsetExactOutETH(address,uint256,bool,bool,address)"
+          ](
             poolToken.name === "BCT" ? addresses.bct : addresses.nct,
             ONE_ETHER,
             true,
             true,
-            // `_intermediaryToken` address
-            "0x4e78011Ce80ee02d2c3e649Fb657E45898257815",
+            "0x0000000000000000000000000000000000000000",
             {
               value: maticCost,
             }
@@ -903,12 +917,27 @@ describe("OffsetHelper", function () {
           ONE_ETHER
         );
 
+        // await (
+        //   await offsetHelper.swapExactOutETH(
+        //     poolToken.name === "BCT" ? addresses.bct : addresses.nct,
+        //     ONE_ETHER,
+        //     true,
+        //     true,
+        //     "0x0000000000000000000000000000000000000000",
+        //     {
+        //       value: maticToSend,
+        //     }
+        //   )
+        // ).wait();
+
         await (
-          await offsetHelper.swapExactOutETH(
+          await offsetHelper[
+            "swapExactOutETH(address,uint256,bool,bool,address)"
+          ](
             poolToken.name === "BCT" ? addresses.bct : addresses.nct,
             ONE_ETHER,
             true,
-            false,
+            true,
             "0x0000000000000000000000000000000000000000",
             {
               value: maticToSend,
@@ -935,15 +964,30 @@ describe("OffsetHelper", function () {
           ONE_ETHER
         );
 
+        // await (
+        //   await offsetHelper.swapExactOutETH(
+        //     poolToken.name === "BCT" ? addresses.bct : addresses.nct,
+        //     ONE_ETHER,
+        //     true,
+        //     true,
+        //     "0x0000000000000000000000000000000000000000",
+        //     {
+        //       value: maticToSend.add(parseEther("0.5")),
+        //     }
+        //   )
+        // ).wait();
+
         await (
-          await offsetHelper.swapExactOutETH(
+          await offsetHelper[
+            "swapExactOutETH(address,uint256,bool,bool,address)"
+          ](
             poolToken.name === "BCT" ? addresses.bct : addresses.nct,
             ONE_ETHER,
             true,
-            false,
+            true,
             "0x0000000000000000000000000000000000000000",
             {
-              value: maticToSend.add(parseEther("0.5")),
+              value: maticToSend,
             }
           )
         ).wait();

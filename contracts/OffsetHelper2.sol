@@ -17,8 +17,6 @@ import "@uniswap/v2-periphery/contracts/interfaces/IUniswapV2Router02.sol";
 
 import "hardhat/console.sol";
 
-import "./library/stringUtils.sol";
-
 /**
  * @title Toucan Protocol Offset Helpers
  * @notice Helper functions that simplify the carbon offsetting (retirement)
@@ -180,6 +178,8 @@ contract OffsetHelper is OffsetHelperStorage {
      * @return path
      * @return amounts An array of the amounts of each TCO2 that were redeemed
      */
+
+    // custom multi-step path support
     function autoOffsetExactOutETH(
         address _poolToken,
         uint256 _amountToOffset,
@@ -210,18 +210,80 @@ contract OffsetHelper is OffsetHelperStorage {
             amounts
         ) = autoRedeem(_poolToken, _amountToOffset);
 
-        // console.log("tco2s[0]:", tco2s[0]);
-        // console.log("amounts[0]:", amounts[0]);
-        // console.log("tco2s[1]:", tco2s[1]);
-        // console.log("amounts[1]:", amounts[1]);
-
+        // test redeeming second TCO2 pool for NCT instead of first
         address[] memory tco2sNew = new address[](1);
         tco2sNew[0] = tco2s[1];
         uint256[] memory amountsNew = new uint256[](1);
         amountsNew[0] = amounts[1];
 
-        // console.log("tco2sNew[0]:", tco2sNew[0]);
-        // console.log("amountsNew[0]:", amountsNew[0]);
+        // retire the TCO2s to achieve offset
+        autoRetire(tco2sNew, amountsNew);
+    }
+
+    // custom direct path support
+    function autoOffsetExactOutETH(
+        address _poolToken,
+        uint256 _amountToOffset,
+        bool customPath
+    )
+        public
+        payable
+        returns (
+            address[] memory tco2s,
+            address[] memory path,
+            uint256[] memory amounts
+        )
+    {
+        // swap MATIC for BCT / NCT
+        (path, amounts) = swapExactOutETH(
+            _poolToken,
+            _amountToOffset,
+            customPath
+        );
+
+        (
+            // redeem BCT / NCT for TCO2s
+            tco2s,
+            amounts
+        ) = autoRedeem(_poolToken, _amountToOffset);
+
+        // test redeeming second TCO2 pool for NCT instead of first
+        address[] memory tco2sNew = new address[](1);
+        tco2sNew[0] = tco2s[1];
+        uint256[] memory amountsNew = new uint256[](1);
+        amountsNew[0] = amounts[1];
+
+        // retire the TCO2s to achieve offset
+        autoRetire(tco2sNew, amountsNew);
+    }
+
+    // default
+    function autoOffsetExactOutETH(
+        address _poolToken,
+        uint256 _amountToOffset
+    )
+        public
+        payable
+        returns (
+            address[] memory tco2s,
+            address[] memory path,
+            uint256[] memory amounts
+        )
+    {
+        // swap MATIC for BCT / NCT
+        (path, amounts) = swapExactOutETH(_poolToken, _amountToOffset);
+
+        (
+            // redeem BCT / NCT for TCO2s
+            tco2s,
+            amounts
+        ) = autoRedeem(_poolToken, _amountToOffset);
+
+        // test redeeming second TCO2 pool for NCT instead of first
+        address[] memory tco2sNew = new address[](1);
+        tco2sNew[0] = tco2s[1];
+        uint256[] memory amountsNew = new uint256[](1);
+        amountsNew[0] = amounts[1];
 
         // retire the TCO2s to achieve offset
         autoRetire(tco2sNew, amountsNew);
@@ -452,6 +514,8 @@ contract OffsetHelper is OffsetHelperStorage {
      * @param _toToken Token to swap for (will be held within contract)
      * @param _toAmount Amount of NCT / BCT wanted
      */
+
+    // custom multi-step path support
     function swapExactOutETH(
         address _toToken,
         uint256 _toAmount,
@@ -485,6 +549,103 @@ contract OffsetHelper is OffsetHelperStorage {
             // business as usual
             path = generatePath(fromToken, _toToken);
         }
+
+        // swap
+        // ** `swapETHForExactTokens()` requires first address in the path to be WETH but we use MATIC here
+        // ** How does this work? I guess WMATIC = WETH in this case.
+
+        // ** Don't I need to approve the transfer of my MATIC first?
+        amounts = routerSushi().swapETHForExactTokens{value: msg.value}(
+            _toAmount,
+            path,
+            address(this),
+            block.timestamp
+        );
+
+        // send surplus back
+        if (msg.value > amounts[0]) {
+            uint256 leftoverETH = msg.value - amounts[0];
+            // ** What does `new bytes(0)` mean?
+            (bool success, ) = msg.sender.call{value: leftoverETH}(
+                new bytes(0)
+            );
+
+            require(success, "Failed to send surplus back");
+        }
+
+        // ** Adding Checks-Effects-Interactions pattern here doesn't make sense to me
+        // ** The user should send funds first before their contract balance is updated
+        // update balances
+        balances[msg.sender][_toToken] += _toAmount;
+    }
+
+    // custom direct path support
+    function swapExactOutETH(
+        address _toToken,
+        uint256 _toAmount,
+        bool customPath
+    )
+        public
+        payable
+        onlyRedeemable(_toToken)
+        returns (address[] memory path, uint256[] memory amounts)
+    {
+        // calculate path & amounts
+        // ** Why are we using WMATIC token when we're supposed to be using MATIC?
+        address fromToken = eligibleTokenAddresses["WMATIC"];
+
+        if (customPath) {
+            // custom direct path
+            path = generatePath(fromToken, _toToken, customPath);
+        } else {
+            // business as usual
+            path = generatePath(fromToken, _toToken);
+        }
+
+        // swap
+        // ** `swapETHForExactTokens()` requires first address in the path to be WETH but we use MATIC here
+        // ** How does this work? I guess WMATIC = WETH in this case.
+
+        // ** Don't I need to approve the transfer of my MATIC first?
+        amounts = routerSushi().swapETHForExactTokens{value: msg.value}(
+            _toAmount,
+            path,
+            address(this),
+            block.timestamp
+        );
+
+        // send surplus back
+        if (msg.value > amounts[0]) {
+            uint256 leftoverETH = msg.value - amounts[0];
+            // ** What does `new bytes(0)` mean?
+            (bool success, ) = msg.sender.call{value: leftoverETH}(
+                new bytes(0)
+            );
+
+            require(success, "Failed to send surplus back");
+        }
+
+        // ** Adding Checks-Effects-Interactions pattern here doesn't make sense to me
+        // ** The user should send funds first before their contract balance is updated
+        // update balances
+        balances[msg.sender][_toToken] += _toAmount;
+    }
+
+    // default
+    function swapExactOutETH(
+        address _toToken,
+        uint256 _toAmount
+    )
+        public
+        payable
+        onlyRedeemable(_toToken)
+        returns (address[] memory path, uint256[] memory amounts)
+    {
+        // calculate path & amounts
+        // ** Why are we using WMATIC token when we're supposed to be using MATIC?
+        address fromToken = eligibleTokenAddresses["WMATIC"];
+
+        path = generatePath(fromToken, _toToken);
 
         // swap
         // ** `swapETHForExactTokens()` requires first address in the path to be WETH but we use MATIC here
@@ -639,7 +800,7 @@ contract OffsetHelper is OffsetHelperStorage {
         return amountOut;
     }
 
-    // default `generatePath`
+    // default
     // ** Why not `private`?
     function generatePath(
         address _fromToken,
@@ -660,28 +821,20 @@ contract OffsetHelper is OffsetHelperStorage {
         }
     }
 
-    // custom direct `generatePath`
+    // custom direct path support
     function generatePath(
         address _fromToken,
         address _toToken,
         bool customPath
     ) internal view returns (address[] memory) {
         console.log("custom direct generatePath ran");
-        // if (_fromToken == eligibleTokenAddresses["USDC"]) {
         address[] memory path = new address[](2);
         path[0] = _fromToken;
         path[1] = _toToken;
         return path;
-        // } else {
-        //     address[] memory path = new address[](3);
-        //     path[0] = _fromToken;
-        //     path[1] = eligibleTokenAddresses["USDC"];
-        //     path[2] = _toToken;
-        //     return path;
-        // }
     }
 
-    // custom direct `generatePath`
+    // custom multi-step path support
     function generatePath(
         address _fromToken,
         address _intermediaryToken,
@@ -689,19 +842,11 @@ contract OffsetHelper is OffsetHelperStorage {
         bool customPath
     ) internal view returns (address[] memory) {
         console.log("custom multi-step generatePath ran");
-        // if (_fromToken == eligibleTokenAddresses["USDC"]) {
         address[] memory path = new address[](3);
         path[0] = _fromToken;
         path[1] = _intermediaryToken;
         path[2] = _toToken;
         return path;
-        // } else {
-        //     address[] memory path = new address[](3);
-        //     path[0] = _fromToken;
-        //     path[1] = eligibleTokenAddresses["USDC"];
-        //     path[2] = _toToken;
-        //     return path;
-        // }
     }
 
     // ** Why not `private`?
