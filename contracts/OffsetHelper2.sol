@@ -179,11 +179,10 @@ contract OffsetHelper is OffsetHelperStorage {
      * @return amounts An array of the amounts of each TCO2 that were redeemed
      */
 
-    // custom multi-step path support
+    // custom multi-step path support (i.e. MATIC -> KLIMA -> BCT/NCT, etc.)
     function autoOffsetExactOutETH(
         address _poolToken,
         uint256 _amountToOffset,
-        bool customPath,
         bool multiStepPath,
         address _intermediaryToken
     )
@@ -199,7 +198,6 @@ contract OffsetHelper is OffsetHelperStorage {
         (path, amounts) = swapExactOutETH(
             _poolToken,
             _amountToOffset,
-            customPath,
             multiStepPath,
             _intermediaryToken
         );
@@ -220,11 +218,11 @@ contract OffsetHelper is OffsetHelperStorage {
         autoRetire(tco2sNew, amountsNew);
     }
 
-    // custom direct path support
+    // pre-defined direct path support (i.e. MATIC -> BCT/NCT vs MATIC -> USDC -> BCT/NCT)
     function autoOffsetExactOutETH(
         address _poolToken,
         uint256 _amountToOffset,
-        bool customPath
+        bool directPath
     )
         public
         payable
@@ -238,7 +236,7 @@ contract OffsetHelper is OffsetHelperStorage {
         (path, amounts) = swapExactOutETH(
             _poolToken,
             _amountToOffset,
-            customPath
+            directPath
         );
 
         (
@@ -306,6 +304,50 @@ contract OffsetHelper is OffsetHelperStorage {
      * @return tco2s An array of the TCO2 addresses that were redeemed
      * @return amounts An array of the amounts of each TCO2 that were redeemed
      */
+    // custom multi-step path support (i.e. MATIC -> KLIMA -> BCT/NCT, etc.)
+    function autoOffsetExactInETH(
+        address _poolToken,
+        bool multiStepPath,
+        address _intermediaryToken
+    )
+        public
+        payable
+        returns (address[] memory tco2s, uint256[] memory amounts)
+    {
+        // swap MATIC for BCT / NCT
+        uint256 amountToOffset = swapExactInETH(
+            _poolToken,
+            multiStepPath,
+            _intermediaryToken
+        );
+
+        // redeem BCT / NCT for TCO2s
+        (tco2s, amounts) = autoRedeem(_poolToken, amountToOffset);
+
+        // retire the TCO2s to achieve offset
+        autoRetire(tco2s, amounts);
+    }
+
+    // pre-defined direct path support (i.e. MATIC -> BCT/NCT vs MATIC -> USDC -> BCT/NCT)
+    function autoOffsetExactInETH(
+        address _poolToken,
+        bool directPath
+    )
+        public
+        payable
+        returns (address[] memory tco2s, uint256[] memory amounts)
+    {
+        // swap MATIC for BCT / NCT
+        uint256 amountToOffset = swapExactInETH(_poolToken, directPath);
+
+        // redeem BCT / NCT for TCO2s
+        (tco2s, amounts) = autoRedeem(_poolToken, amountToOffset);
+
+        // retire the TCO2s to achieve offset
+        autoRetire(tco2s, amounts);
+    }
+
+    // custom multi-step path support
     function autoOffsetExactInETH(
         address _poolToken
     )
@@ -351,6 +393,53 @@ contract OffsetHelper is OffsetHelperStorage {
      * @return tco2s An array of the TCO2 addresses that were redeemed
      * @return amounts An array of the amounts of each TCO2 that were redeemed
      */
+    // custom multi-step path support (i.e. WETH -> KLIMA -> BCT/NCT, etc.)
+    function autoOffsetExactOutToken(
+        address _depositedToken,
+        address _poolToken,
+        uint256 _amountToOffset,
+        bool multiStepPath,
+        address _intermediaryToken
+    ) public returns (address[] memory tco2s, uint256[] memory amounts) {
+        // swap input token for BCT / NCT
+        swapExactOutToken(
+            _depositedToken,
+            _poolToken,
+            _amountToOffset,
+            multiStepPath,
+            _intermediaryToken
+        );
+
+        // redeem BCT / NCT for TCO2s
+        (tco2s, amounts) = autoRedeem(_poolToken, _amountToOffset);
+
+        // retire the TCO2s to achieve offset
+        autoRetire(tco2s, amounts);
+    }
+
+    // pre-defined/custom direct path support (i.e. WETH -> BCT/NCT vs WETH -> USDC -> BCT/NCT)
+    function autoOffsetExactOutToken(
+        address _depositedToken,
+        address _poolToken,
+        uint256 _amountToOffset,
+        bool directPath
+    ) public returns (address[] memory tco2s, uint256[] memory amounts) {
+        // swap input token for BCT / NCT
+        swapExactOutToken(
+            _depositedToken,
+            _poolToken,
+            _amountToOffset,
+            directPath
+        );
+
+        // redeem BCT / NCT for TCO2s
+        (tco2s, amounts) = autoRedeem(_poolToken, _amountToOffset);
+
+        // retire the TCO2s to achieve offset
+        autoRetire(tco2s, amounts);
+    }
+
+    // default
     function autoOffsetExactOutToken(
         address _depositedToken,
         address _poolToken,
@@ -394,6 +483,53 @@ contract OffsetHelper is OffsetHelperStorage {
      * @return tco2s An array of the TCO2 addresses that were redeemed
      * @return amounts An array of the amounts of each TCO2 that were redeemed
      */
+    // custom multi-step path support (i.e. WETH -> KLIMA -> BCT/NCT, etc.)
+    function autoOffsetExactInToken(
+        address _fromToken,
+        uint256 _amountToSwap,
+        address _poolToken,
+        bool multiStepPath,
+        address _intermediaryToken
+    ) public returns (address[] memory tco2s, uint256[] memory amounts) {
+        // swap input token for BCT / NCT
+        uint256 amountToOffset = swapExactInToken(
+            _fromToken,
+            _amountToSwap,
+            _poolToken,
+            multiStepPath,
+            _intermediaryToken
+        );
+
+        // redeem BCT / NCT for TCO2s
+        (tco2s, amounts) = autoRedeem(_poolToken, amountToOffset);
+
+        // retire the TCO2s to achieve offset
+        autoRetire(tco2s, amounts);
+    }
+
+    // pre-defined/custom direct path support (i.e. WETH -> BCT/NCT vs WETH -> USDC -> BCT/NCT)
+    function autoOffsetExactInToken(
+        address _fromToken,
+        uint256 _amountToSwap,
+        address _poolToken,
+        bool directPath
+    ) public returns (address[] memory tco2s, uint256[] memory amounts) {
+        // swap input token for BCT / NCT
+        uint256 amountToOffset = swapExactInToken(
+            _fromToken,
+            _amountToSwap,
+            _poolToken,
+            directPath
+        );
+
+        // redeem BCT / NCT for TCO2s
+        (tco2s, amounts) = autoRedeem(_poolToken, amountToOffset);
+
+        // retire the TCO2s to achieve offset
+        autoRetire(tco2s, amounts);
+    }
+
+    // default
     function autoOffsetExactInToken(
         address _fromToken,
         uint256 _amountToSwap,
@@ -514,12 +650,10 @@ contract OffsetHelper is OffsetHelperStorage {
      * @param _toToken Token to swap for (will be held within contract)
      * @param _toAmount Amount of NCT / BCT wanted
      */
-
     // custom multi-step path support
     function swapExactOutETH(
         address _toToken,
         uint256 _toAmount,
-        bool customPath,
         bool multiStepPath,
         address _intermediaryToken
     )
@@ -532,23 +666,13 @@ contract OffsetHelper is OffsetHelperStorage {
         // ** Why are we using WMATIC token when we're supposed to be using MATIC?
         address fromToken = eligibleTokenAddresses["WMATIC"];
 
-        if (customPath) {
-            if (multiStepPath) {
-                // custom multi step path
-                path = generatePath(
-                    fromToken,
-                    _intermediaryToken,
-                    _toToken,
-                    customPath
-                );
-            } else {
-                // custom direct path
-                path = generatePath(fromToken, _toToken, customPath);
-            }
-        } else {
-            // business as usual
-            path = generatePath(fromToken, _toToken);
-        }
+        // custom multi step path
+        path = generatePath(
+            fromToken,
+            _toToken,
+            multiStepPath,
+            _intermediaryToken
+        );
 
         // swap
         // ** `swapETHForExactTokens()` requires first address in the path to be WETH but we use MATIC here
@@ -579,11 +703,11 @@ contract OffsetHelper is OffsetHelperStorage {
         balances[msg.sender][_toToken] += _toAmount;
     }
 
-    // custom direct path support
+    // pre-defined/custom direct path support
     function swapExactOutETH(
         address _toToken,
         uint256 _toAmount,
-        bool customPath
+        bool directPath
     )
         public
         payable
@@ -594,13 +718,7 @@ contract OffsetHelper is OffsetHelperStorage {
         // ** Why are we using WMATIC token when we're supposed to be using MATIC?
         address fromToken = eligibleTokenAddresses["WMATIC"];
 
-        if (customPath) {
-            // custom direct path
-            path = generatePath(fromToken, _toToken, customPath);
-        } else {
-            // business as usual
-            path = generatePath(fromToken, _toToken);
-        }
+        path = generatePath(fromToken, _toToken, directPath);
 
         // swap
         // ** `swapETHForExactTokens()` requires first address in the path to be WETH but we use MATIC here
@@ -676,6 +794,67 @@ contract OffsetHelper is OffsetHelperStorage {
         balances[msg.sender][_toToken] += _toAmount;
     }
 
+    // custom multi-step path support
+    function swapExactInETH(
+        address _toToken,
+        bool multiStepPath,
+        address _intermediaryToken
+    ) public payable onlyRedeemable(_toToken) returns (uint256) {
+        // calculate path & amounts
+        address fromToken = eligibleTokenAddresses["WMATIC"];
+        address[] memory path = generatePath(
+            fromToken,
+            _toToken,
+            multiStepPath,
+            _intermediaryToken
+        );
+
+        // swap
+        // ** Does MATIC get auto-wrapped into WMATIC here?
+        uint256[] memory amounts = routerSushi().swapExactETHForTokens{
+            value: msg.value
+        }(0, path, address(this), block.timestamp);
+
+        // ** I guess I could also add a sanity check here:
+        // ** require(path.length == amounts.length, "Unequal arrays");
+        uint256 amountOut = amounts[path.length - 1];
+
+        // ** Adding Checks-Effects-Interactions pattern here doesn't make sense to me
+        // ** The user should send funds first before their contract balance is updated
+        // update balances
+        balances[msg.sender][_toToken] += amountOut;
+
+        return amountOut;
+    }
+
+    // pre-defined/custom direct path support
+    function swapExactInETH(
+        address _toToken,
+        bool directPath
+    ) public payable onlyRedeemable(_toToken) returns (uint256) {
+        // calculate path & amounts
+        address fromToken = eligibleTokenAddresses["WMATIC"];
+        address[] memory path = generatePath(fromToken, _toToken, directPath);
+
+        // swap
+        // ** Does MATIC get auto-wrapped into WMATIC here?
+        uint256[] memory amounts = routerSushi().swapExactETHForTokens{
+            value: msg.value
+        }(0, path, address(this), block.timestamp);
+
+        // ** I guess I could also add a sanity check here:
+        // ** require(path.length == amounts.length, "Unequal arrays");
+        uint256 amountOut = amounts[path.length - 1];
+
+        // ** Adding Checks-Effects-Interactions pattern here doesn't make sense to me
+        // ** The user should send funds first before their contract balance is updated
+        // update balances
+        balances[msg.sender][_toToken] += amountOut;
+
+        return amountOut;
+    }
+
+    // default
     function swapExactInETH(
         address _toToken
     ) public payable onlyRedeemable(_toToken) returns (uint256) {
@@ -708,6 +887,108 @@ contract OffsetHelper is OffsetHelperStorage {
      * @param _toToken The token to swap for (will be held within contract)
      * @param _toAmount The required amount of the Toucan pool token (NCT/BCT)
      */
+    // custom multi-step path support
+    function swapExactOutToken(
+        address _fromToken,
+        address _toToken,
+        uint256 _toAmount,
+        bool multiStepPath,
+        address _intermediaryToken
+    ) public onlySwappable(_fromToken) onlyRedeemable(_toToken) {
+        // calculate path & amounts
+        // ** Could we replace `memory` with `calldata`?
+        (
+            address[] memory path,
+            uint256[] memory expAmounts
+        ) = calculateExactOutSwap(
+                _fromToken,
+                _toToken,
+                _toAmount,
+                multiStepPath,
+                _intermediaryToken
+            );
+        uint256 amountIn = expAmounts[0];
+
+        // transfer tokens
+        IERC20(_fromToken).safeTransferFrom(
+            msg.sender,
+            address(this),
+            amountIn
+        );
+
+        // approve router
+        // ** 1. Does OH contract (not user) have approve the router contract?
+        // ** 2. If so, does OH contract approve it automatically? It seems so.
+        IERC20(_fromToken).approve(sushiRouterAddress, amountIn);
+
+        // swap
+        uint256[] memory amounts = routerSushi().swapTokensForExactTokens(
+            _toAmount,
+            amountIn,
+            path,
+            address(this),
+            block.timestamp
+        );
+
+        // remove remaining approval if less input token was consumed
+        if (amounts[0] < amountIn) {
+            IERC20(_fromToken).approve(sushiRouterAddress, 0);
+        }
+
+        // ** Adding Checks-Effects-Interactions pattern here doesn't make sense to me
+        // ** The user should send funds first before their contract balance is updated
+        // update balances
+        balances[msg.sender][_toToken] += _toAmount;
+    }
+
+    // pre-defined/custom direct path support
+    function swapExactOutToken(
+        address _fromToken,
+        address _toToken,
+        uint256 _toAmount,
+        bool directPath
+    ) public onlySwappable(_fromToken) onlyRedeemable(_toToken) {
+        // calculate path & amounts
+        // ** Could we replace `memory` with `calldata`?
+        (
+            address[] memory path,
+            uint256[] memory expAmounts
+        ) = calculateExactOutSwap(_fromToken, _toToken, _toAmount, directPath);
+        uint256 amountIn = expAmounts[0];
+
+        // transfer tokens
+        IERC20(_fromToken).safeTransferFrom(
+            msg.sender,
+            address(this),
+            amountIn
+        );
+
+        // approve router
+        // ** 1. Does OH contract (not user) have approve the router contract?
+        // ** 2. If so, does OH contract approve it automatically? It seems so.
+        IERC20(_fromToken).approve(sushiRouterAddress, amountIn);
+
+        // swap
+        uint256[] memory amounts = routerSushi().swapTokensForExactTokens(
+            _toAmount,
+            amountIn,
+            path,
+            address(this),
+            block.timestamp
+        );
+
+        // remove remaining approval if less input token was consumed
+        if (amounts[0] < amountIn) {
+            IERC20(_fromToken).approve(sushiRouterAddress, 0);
+        }
+
+        // ** Adding Checks-Effects-Interactions pattern here doesn't make sense to me
+        // ** The user should send funds first before their contract balance is updated
+        // update balances
+        balances[msg.sender][_toToken] += _toAmount;
+    }
+
+    // default
     function swapExactOutToken(
         address _fromToken,
         address _toToken,
@@ -756,6 +1037,105 @@ contract OffsetHelper is OffsetHelperStorage {
     // ** Why `public`?
     // I'd change `_fromAmount` & `_toToken` names for consistency
     // E.g. `_fromAmount` -> `_amountToSwap` & `_toToken` -> `_poolToken`
+    // custom multi-step path support
+    function swapExactInToken(
+        address _fromToken,
+        uint256 _fromAmount,
+        address _toToken,
+        bool multiStepPath,
+        address _intermediaryToken
+    )
+        public
+        onlySwappable(_fromToken)
+        onlyRedeemable(_toToken)
+        returns (uint256)
+    {
+        // calculate path & amounts
+        address[] memory path = generatePath(
+            _fromToken,
+            _toToken,
+            multiStepPath,
+            _intermediaryToken
+        );
+        uint256 len = path.length;
+
+        // transfer tokens
+        IERC20(_fromToken).safeTransferFrom(
+            msg.sender,
+            address(this),
+            _fromAmount
+        );
+
+        // approve router
+        // ** Why are we using `safeApprove` here if we used `approve` in `swapExactOutToken`?
+        IERC20(_fromToken).safeApprove(sushiRouterAddress, _fromAmount);
+
+        // swap
+        uint256[] memory amounts = routerSushi().swapExactTokensForTokens(
+            _fromAmount,
+            // ** Why 0?
+            0,
+            path,
+            address(this),
+            block.timestamp
+        );
+        uint256 amountOut = amounts[len - 1];
+
+        // ** Adding Checks-Effects-Interactions pattern here doesn't make sense to me
+        // ** The user should send funds first before their contract balance is updated
+        // update balances
+        balances[msg.sender][_toToken] += amountOut;
+
+        return amountOut;
+    }
+
+    // pre-defined/custom direct path support
+    function swapExactInToken(
+        address _fromToken,
+        uint256 _fromAmount,
+        address _toToken,
+        bool directPath
+    )
+        public
+        onlySwappable(_fromToken)
+        onlyRedeemable(_toToken)
+        returns (uint256)
+    {
+        // calculate path & amounts
+        address[] memory path = generatePath(_fromToken, _toToken, directPath);
+        uint256 len = path.length;
+
+        // transfer tokens
+        IERC20(_fromToken).safeTransferFrom(
+            msg.sender,
+            address(this),
+            _fromAmount
+        );
+
+        // approve router
+        // ** Why are we using `safeApprove` here if we used `approve` in `swapExactOutToken`?
+        IERC20(_fromToken).safeApprove(sushiRouterAddress, _fromAmount);
+
+        // swap
+        uint256[] memory amounts = routerSushi().swapExactTokensForTokens(
+            _fromAmount,
+            // ** Why 0?
+            0,
+            path,
+            address(this),
+            block.timestamp
+        );
+        uint256 amountOut = amounts[len - 1];
+
+        // ** Adding Checks-Effects-Interactions pattern here doesn't make sense to me
+        // ** The user should send funds first before their contract balance is updated
+        // update balances
+        balances[msg.sender][_toToken] += amountOut;
+
+        return amountOut;
+    }
+
+    // default
     function swapExactInToken(
         address _fromToken,
         uint256 _fromAmount,
@@ -800,8 +1180,36 @@ contract OffsetHelper is OffsetHelperStorage {
         return amountOut;
     }
 
-    // default
+    // custom multi-step path support
+    function generatePath(
+        address _fromToken,
+        address _toToken,
+        bool multiStepPath,
+        address _intermediaryToken
+    ) internal view returns (address[] memory) {
+        console.log("custom multi-step generatePath ran");
+        address[] memory path = new address[](3);
+        path[0] = _fromToken;
+        path[1] = _intermediaryToken;
+        path[2] = _toToken;
+        return path;
+    }
+
+    // custom/pre-defined direct path support
+    function generatePath(
+        address _fromToken,
+        address _toToken,
+        bool directPath
+    ) internal view returns (address[] memory) {
+        console.log("pre-defined/custom direct generatePath ran");
+        address[] memory path = new address[](2);
+        path[0] = _fromToken;
+        path[1] = _toToken;
+        return path;
+    }
+
     // ** Why not `private`?
+    // default
     function generatePath(
         address _fromToken,
         address _toToken
@@ -821,34 +1229,6 @@ contract OffsetHelper is OffsetHelperStorage {
         }
     }
 
-    // custom direct path support
-    function generatePath(
-        address _fromToken,
-        address _toToken,
-        bool customPath
-    ) internal view returns (address[] memory) {
-        console.log("custom direct generatePath ran");
-        address[] memory path = new address[](2);
-        path[0] = _fromToken;
-        path[1] = _toToken;
-        return path;
-    }
-
-    // custom multi-step path support
-    function generatePath(
-        address _fromToken,
-        address _intermediaryToken,
-        address _toToken,
-        bool customPath
-    ) internal view returns (address[] memory) {
-        console.log("custom multi-step generatePath ran");
-        address[] memory path = new address[](3);
-        path[0] = _fromToken;
-        path[1] = _intermediaryToken;
-        path[2] = _toToken;
-        return path;
-    }
-
     // ** Why not `private`?
     function routerSushi() internal view returns (IUniswapV2Router02) {
         // ** Don't understand the significance of this line
@@ -856,6 +1236,49 @@ contract OffsetHelper is OffsetHelperStorage {
     }
 
     // ** Why not `private`?
+    // custom multi-step path support
+    function calculateExactOutSwap(
+        address _fromToken,
+        address _toToken,
+        uint256 _toAmount,
+        bool multiStepPath,
+        address _intermediaryToken
+    ) internal view returns (address[] memory path, uint256[] memory amounts) {
+        path = generatePath(
+            _fromToken,
+            _toToken,
+            multiStepPath,
+            _intermediaryToken
+        );
+        uint256 len = path.length;
+
+        // ** What does `getAmountsIn()` do exactly?
+        amounts = routerSushi().getAmountsIn(_toAmount, path);
+
+        // sanity check arrays
+        require(len == amounts.length, "Arrays unequal");
+        require(_toAmount == amounts[len - 1], "Output amount mismatch");
+    }
+
+    // custom/pre-defined direct path support
+    function calculateExactOutSwap(
+        address _fromToken,
+        address _toToken,
+        uint256 _toAmount,
+        bool directPath
+    ) internal view returns (address[] memory path, uint256[] memory amounts) {
+        path = generatePath(_fromToken, _toToken, directPath);
+        uint256 len = path.length;
+
+        // ** What does `getAmountsIn()` do exactly?
+        amounts = routerSushi().getAmountsIn(_toAmount, path);
+
+        // sanity check arrays
+        require(len == amounts.length, "Arrays unequal");
+        require(_toAmount == amounts[len - 1], "Output amount mismatch");
+    }
+
+    // default
     function calculateExactOutSwap(
         address _fromToken,
         address _toToken,
