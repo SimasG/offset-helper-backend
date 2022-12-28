@@ -1311,6 +1311,53 @@ contract OffsetHelper is OffsetHelperStorage {
      * @return amountsIn The amount of the ERC20 token required in order to
      * swap for the specified amount of the pool token
      */
+    // custom multi-step path support
+    function calculateNeededTokenAmount(
+        address _fromToken,
+        address _toToken,
+        uint256 _toAmount,
+        bool multiStepPath,
+        address _intermediaryAddress
+    )
+        public
+        view
+        onlySwappable(_fromToken)
+        onlyRedeemable(_toToken)
+        returns (uint256)
+    {
+        (, uint256[] memory amounts) = calculateExactOutSwap(
+            _fromToken,
+            _toToken,
+            _toAmount,
+            multiStepPath,
+            _intermediaryAddress
+        );
+        return amounts[0];
+    }
+
+    // custom/pre-defined direct path support
+    function calculateNeededTokenAmount(
+        address _fromToken,
+        address _toToken,
+        uint256 _toAmount,
+        bool directPath
+    )
+        public
+        view
+        onlySwappable(_fromToken)
+        onlyRedeemable(_toToken)
+        returns (uint256)
+    {
+        (, uint256[] memory amounts) = calculateExactOutSwap(
+            _fromToken,
+            _toToken,
+            _toAmount,
+            directPath
+        );
+        return amounts[0];
+    }
+
+    // default
     function calculateNeededTokenAmount(
         address _fromToken,
         address _toToken,
@@ -1340,6 +1387,41 @@ contract OffsetHelper is OffsetHelperStorage {
      * @return amounts The amount of MATIC required in order to swap for
      * the specified amount of the pool token
      */
+    // custom multi-step path support
+    function calculateNeededETHAmount(
+        address _toToken,
+        uint256 _toAmount,
+        bool multiStepPath,
+        address _intermediaryToken
+    ) public view onlyRedeemable(_toToken) returns (uint256) {
+        address fromToken = eligibleTokenAddresses["WMATIC"];
+        (, uint256[] memory amounts) = calculateExactOutSwap(
+            fromToken,
+            _toToken,
+            _toAmount,
+            multiStepPath,
+            _intermediaryToken
+        );
+        return amounts[0];
+    }
+
+    // custom/pre-defined direct path support
+    function calculateNeededETHAmount(
+        address _toToken,
+        uint256 _toAmount,
+        bool directPath
+    ) public view onlyRedeemable(_toToken) returns (uint256) {
+        address fromToken = eligibleTokenAddresses["WMATIC"];
+        (, uint256[] memory amounts) = calculateExactOutSwap(
+            fromToken,
+            _toToken,
+            _toAmount,
+            directPath
+        );
+        return amounts[0];
+    }
+
+    // default
     function calculateNeededETHAmount(
         address _toToken,
         uint256 _toAmount
@@ -1363,6 +1445,53 @@ contract OffsetHelper is OffsetHelperStorage {
      * for example, NCT or BCT
      * @return The expected amount of Pool token that can be acquired
      */
+    // custom multi-step path support
+    function calculateExpectedPoolTokenForToken(
+        address _fromToken,
+        uint256 _fromAmount,
+        address _toToken,
+        bool multiStepPath,
+        address _intermediaryToken
+    )
+        public
+        view
+        onlySwappable(_fromToken)
+        onlyRedeemable(_toToken)
+        returns (uint256)
+    {
+        (, uint256[] memory amounts) = calculateExactInSwap(
+            _fromToken,
+            _fromAmount,
+            _toToken,
+            multiStepPath,
+            _intermediaryToken
+        );
+        return amounts[amounts.length - 1];
+    }
+
+    // custom/pre-defined direct path support
+    function calculateExpectedPoolTokenForToken(
+        address _fromToken,
+        uint256 _fromAmount,
+        address _toToken,
+        bool directPath
+    )
+        public
+        view
+        onlySwappable(_fromToken)
+        onlyRedeemable(_toToken)
+        returns (uint256)
+    {
+        (, uint256[] memory amounts) = calculateExactInSwap(
+            _fromToken,
+            _fromAmount,
+            _toToken,
+            directPath
+        );
+        return amounts[amounts.length - 1];
+    }
+
+    // default
     function calculateExpectedPoolTokenForToken(
         address _fromToken,
         uint256 _fromAmount,
@@ -1391,6 +1520,41 @@ contract OffsetHelper is OffsetHelperStorage {
      * for example, NCT or BCT
      * @return The expected amount of Pool token that can be acquired
      */
+    // custom multi-step path support
+    function calculateExpectedPoolTokenForETH(
+        uint256 _fromMaticAmount,
+        address _toToken,
+        bool multiStepPath,
+        address _intermediaryToken
+    ) public view onlyRedeemable(_toToken) returns (uint256) {
+        address fromToken = eligibleTokenAddresses["WMATIC"];
+        (, uint256[] memory amounts) = calculateExactInSwap(
+            fromToken,
+            _fromMaticAmount,
+            _toToken,
+            multiStepPath,
+            _intermediaryToken
+        );
+        return amounts[amounts.length - 1];
+    }
+
+    // custom/pre-defined direct path support
+    function calculateExpectedPoolTokenForETH(
+        uint256 _fromMaticAmount,
+        address _toToken,
+        bool directPath
+    ) public view onlyRedeemable(_toToken) returns (uint256) {
+        address fromToken = eligibleTokenAddresses["WMATIC"];
+        (, uint256[] memory amounts) = calculateExactInSwap(
+            fromToken,
+            _fromMaticAmount,
+            _toToken,
+            directPath
+        );
+        return amounts[amounts.length - 1];
+    }
+
+    // default
     function calculateExpectedPoolTokenForETH(
         uint256 _fromMaticAmount,
         address _toToken
@@ -1405,6 +1569,45 @@ contract OffsetHelper is OffsetHelperStorage {
     }
 
     /* calculateExpectedPoolTokenForToken() & calculateExpectedPoolTokenForETH() helper */
+    // custom multi-step path support
+    function calculateExactInSwap(
+        address _fromToken,
+        uint256 _fromAmount,
+        address _toToken,
+        bool multiStepPath,
+        address _intermediaryAddress
+    ) internal view returns (address[] memory path, uint256[] memory amounts) {
+        path = generatePath(
+            _fromToken,
+            _toToken,
+            multiStepPath,
+            _intermediaryAddress
+        );
+
+        amounts = routerSushi().getAmountsOut(_fromAmount, path);
+
+        // sanity check arrays
+        require(path.length == amounts.length, "Arrays unequal");
+        require(_fromAmount == amounts[0], "Input amount mismatch");
+    }
+
+    // custom/pre-defined direct path support
+    function calculateExactInSwap(
+        address _fromToken,
+        uint256 _fromAmount,
+        address _toToken,
+        bool directPath
+    ) internal view returns (address[] memory path, uint256[] memory amounts) {
+        path = generatePath(_fromToken, _toToken, directPath);
+
+        amounts = routerSushi().getAmountsOut(_fromAmount, path);
+
+        // sanity check arrays
+        require(path.length == amounts.length, "Arrays unequal");
+        require(_fromAmount == amounts[0], "Input amount mismatch");
+    }
+
+    // default
     function calculateExactInSwap(
         address _fromToken,
         uint256 _fromAmount,
