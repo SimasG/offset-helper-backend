@@ -209,13 +209,13 @@ contract OffsetHelper is OffsetHelperStorage {
         ) = autoRedeem(_poolToken, _amountToOffset);
 
         // test redeeming second TCO2 pool for NCT instead of first
-        address[] memory tco2sNew = new address[](1);
-        tco2sNew[0] = tco2s[1];
-        uint256[] memory amountsNew = new uint256[](1);
-        amountsNew[0] = amounts[1];
+        // address[] memory tco2sNew = new address[](1);
+        // tco2sNew[0] = tco2s[1];
+        // uint256[] memory amountsNew = new uint256[](1);
+        // amountsNew[0] = amounts[1];
 
         // retire the TCO2s to achieve offset
-        autoRetire(tco2sNew, amountsNew);
+        autoRetire(tco2s, amounts);
     }
 
     // pre-defined direct path support (i.e. MATIC -> BCT/NCT vs MATIC -> USDC -> BCT/NCT)
@@ -246,13 +246,13 @@ contract OffsetHelper is OffsetHelperStorage {
         ) = autoRedeem(_poolToken, _amountToOffset);
 
         // test redeeming second TCO2 pool for NCT instead of first
-        address[] memory tco2sNew = new address[](1);
-        tco2sNew[0] = tco2s[1];
-        uint256[] memory amountsNew = new uint256[](1);
-        amountsNew[0] = amounts[1];
+        // address[] memory tco2sNew = new address[](1);
+        // tco2sNew[0] = tco2s[1];
+        // uint256[] memory amountsNew = new uint256[](1);
+        // amountsNew[0] = amounts[1];
 
         // retire the TCO2s to achieve offset
-        autoRetire(tco2sNew, amountsNew);
+        autoRetire(tco2s, amounts);
     }
 
     // default
@@ -278,13 +278,13 @@ contract OffsetHelper is OffsetHelperStorage {
         ) = autoRedeem(_poolToken, _amountToOffset);
 
         // test redeeming second TCO2 pool for NCT instead of first
-        address[] memory tco2sNew = new address[](1);
-        tco2sNew[0] = tco2s[1];
-        uint256[] memory amountsNew = new uint256[](1);
-        amountsNew[0] = amounts[1];
+        // address[] memory tco2sNew = new address[](1);
+        // tco2sNew[0] = tco2s[1];
+        // uint256[] memory amountsNew = new uint256[](1);
+        // amountsNew[0] = amounts[1];
 
         // retire the TCO2s to achieve offset
-        autoRetire(tco2sNew, amountsNew);
+        autoRetire(tco2s, amounts);
     }
 
     // ** Offset Method 3 (specified MATIC) ** //
@@ -628,7 +628,9 @@ contract OffsetHelper is OffsetHelperStorage {
         require(tco2sLen == _amounts.length, "Arrays unequal");
 
         uint256 i = 0;
+
         while (i < tco2sLen) {
+            if (_amounts[i] == 0) continue;
             require(
                 balances[msg.sender][_tco2s[i]] >= _amounts[i],
                 "Insufficient TCO2 balance"
@@ -1255,7 +1257,7 @@ contract OffsetHelper is OffsetHelperStorage {
         bool multiStepPath,
         address _intermediaryToken
     ) internal view returns (address[] memory) {
-        console.log("custom multi-step generatePath ran");
+        // console.log("custom multi-step generatePath ran");
         address[] memory path = new address[](3);
         path[0] = _fromToken;
         path[1] = _intermediaryToken;
@@ -1269,7 +1271,7 @@ contract OffsetHelper is OffsetHelperStorage {
         address _toToken,
         bool directPath
     ) internal view returns (address[] memory) {
-        console.log("pre-defined/custom direct generatePath ran");
+        // console.log("pre-defined/custom direct generatePath ran");
         address[] memory path = new address[](2);
         path[0] = _fromToken;
         path[1] = _toToken;
@@ -1282,7 +1284,7 @@ contract OffsetHelper is OffsetHelperStorage {
         address _fromToken,
         address _toToken
     ) internal view returns (address[] memory) {
-        console.log("default generatePath ran");
+        // console.log("default generatePath ran");
         if (_fromToken == eligibleTokenAddresses["USDC"]) {
             address[] memory path = new address[](2);
             path[0] = _fromToken;
