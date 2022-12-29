@@ -806,7 +806,7 @@ contract OffsetHelper is OffsetHelperStorage {
         address _fromToken,
         address _toToken
     ) internal view returns (address[] memory) {
-        console.log("default generatePath ran");
+        // console.log("default generatePath ran");
         if (_fromToken == eligibleTokenAddresses["USDC"]) {
             address[] memory path = new address[](2);
             path[0] = _fromToken;
@@ -827,7 +827,7 @@ contract OffsetHelper is OffsetHelperStorage {
         address _toToken,
         bool customPath
     ) internal view returns (address[] memory) {
-        console.log("custom direct generatePath ran");
+        // console.log("custom direct generatePath ran");
         address[] memory path = new address[](2);
         path[0] = _fromToken;
         path[1] = _toToken;
@@ -841,7 +841,7 @@ contract OffsetHelper is OffsetHelperStorage {
         address _toToken,
         bool customPath
     ) internal view returns (address[] memory) {
-        console.log("custom multi-step generatePath ran");
+        // console.log("custom multi-step generatePath ran");
         address[] memory path = new address[](3);
         path[0] = _fromToken;
         path[1] = _intermediaryToken;

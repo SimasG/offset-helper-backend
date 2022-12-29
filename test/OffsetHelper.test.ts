@@ -255,7 +255,7 @@ describe("OffsetHelper", function () {
   describe("#autoOffsetExactOut{ETH,Token}()", function () {
     for (const name of TOKEN_POOLS) {
       // ** NCT bug test case
-      it.only(`should retire 1.0 TCO2 using a MATIC swap and ${name.toUpperCase()} redemption`, async function () {
+      it(`should retire 1.0 TCO2 using a MATIC swap and ${name.toUpperCase()} redemption`, async function () {
         const { offsetHelper, addr2, tokens } = await loadFixture(
           deployOffsetHelperFixture
         );
