@@ -268,20 +268,7 @@ describe("OffsetHelper", function () {
           "calculateNeededETHAmount(address,uint256)"
         ](poolToken.name === "BCT" ? addresses.bct : addresses.nct, ONE_ETHER);
 
-        // then we use the autoOffset function to retire 1.0 TCO2 from MATIC using NCT
-        // const tx = await (
-        //   await offsetHelper.autoOffsetExactOutETH(
-        //     poolToken.name === "BCT" ? addresses.bct : addresses.nct,
-        //     ONE_ETHER,
-        //     true,
-        //     true,
-        //     "0x0000000000000000000000000000000000000000",
-        //     {
-        //       value: maticCost,
-        //     }
-        //   )
-        // ).wait();
-
+        // then we use the autoOffset function to retire 1.0 TCO2 from MATIC using NCTxw
         const tx = await (
           await offsetHelper["autoOffsetExactOutETH(address,uint256)"](
             poolToken.name === "BCT" ? addresses.bct : addresses.nct,
