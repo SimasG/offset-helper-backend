@@ -701,6 +701,20 @@ contract OffsetHelper is OffsetHelperStorage {
         uint256 _toAmount,
         address[] memory customPath
     ) public view onlyRedeemable(_toToken) returns (uint256) {
+        // Custom `customPath` logic only makes sense if the swap is multi-step
+        require(
+            customPath.length == 0 || customPath.length == 3,
+            "Invalid custom path"
+        );
+
+        if (customPath.length == 3) {
+            require(
+                customPath[0] == eligibleTokenAddresses["WMATIC"],
+                "Token not WMATIC"
+            );
+            require(isRedeemable(customPath[2]), "Token not redeemable");
+        }
+
         address fromToken = eligibleTokenAddresses["WMATIC"];
         (, uint256[] memory amounts) = calculateExactOutSwap(
             fromToken,
@@ -750,6 +764,20 @@ contract OffsetHelper is OffsetHelperStorage {
         address _toToken,
         address[] memory customPath
     ) public view onlyRedeemable(_toToken) returns (uint256) {
+        // Custom `customPath` logic only makes sense if the swap is multi-step
+        require(
+            customPath.length == 0 || customPath.length == 3,
+            "Invalid custom path"
+        );
+
+        if (customPath.length == 3) {
+            require(
+                customPath[0] == eligibleTokenAddresses["WMATIC"],
+                "Token not WMATIC"
+            );
+            require(isRedeemable(customPath[2]), "Token not redeemable");
+        }
+
         address fromToken = eligibleTokenAddresses["WMATIC"];
         (, uint256[] memory amounts) = calculateExactInSwap(
             fromToken,
