@@ -430,7 +430,12 @@ contract OffsetHelper is OffsetHelperStorage {
         address[] memory customPath
     ) public payable onlyRedeemable(_toToken) {
         // Custom `customPath` logic only makes sense if the swap is multi-step
-        if (customPath.length > 2) {
+        require(
+            customPath.length == 0 || customPath.length == 3,
+            "Invalid custom path"
+        );
+
+        if (customPath.length == 3) {
             require(
                 customPath[0] == eligibleTokenAddresses["WMATIC"],
                 "Token not WMATIC"
@@ -473,6 +478,20 @@ contract OffsetHelper is OffsetHelperStorage {
         address _toToken,
         address[] memory customPath
     ) public payable onlyRedeemable(_toToken) returns (uint256) {
+        // Custom `customPath` logic only makes sense if the swap is multi-step
+        require(
+            customPath.length == 0 || customPath.length == 3,
+            "Invalid custom path"
+        );
+
+        if (customPath.length == 3) {
+            require(
+                customPath[0] == eligibleTokenAddresses["WMATIC"],
+                "Token not WMATIC"
+            );
+            require(isRedeemable(customPath[2]), "Token not redeemable");
+        }
+
         // calculate path & amounts
         address fromToken = eligibleTokenAddresses["WMATIC"];
         address[] memory path = generatePath(fromToken, _toToken, customPath);
@@ -589,25 +608,6 @@ contract OffsetHelper is OffsetHelperStorage {
 
         return amountOut;
     }
-
-    // ** Why not `private`?
-    // function generatePath(
-    //     address _fromToken,
-    //     address _toToken
-    // ) internal view returns (address[] memory) {
-    //     if (_fromToken == eligibleTokenAddresses["USDC"]) {
-    //         address[] memory path = new address[](2);
-    //         path[0] = _fromToken;
-    //         path[1] = _toToken;
-    //         return path;
-    //     } else {
-    //         address[] memory path = new address[](3);
-    //         path[0] = _fromToken;
-    //         path[1] = eligibleTokenAddresses["USDC"];
-    //         path[2] = _toToken;
-    //         return path;
-    //     }
-    // }
 
     function generatePath(
         address _fromToken,
