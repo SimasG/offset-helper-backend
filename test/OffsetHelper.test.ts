@@ -36,9 +36,6 @@ describe("OffsetHelper", function () {
   async function deployOffsetHelperFixture() {
     const [addr1, addr2, ...addrs] = await ethers.getSigners();
 
-    // console.log("addr1:", addr1)
-    // console.log("addr2:", addr2)
-
     const offsetHelperFactory = (await ethers.getContractFactory(
       "OffsetHelper",
       // ** Why are we selecting `addr2` as the signer instead of `addr1` here?
